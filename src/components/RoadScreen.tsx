@@ -8,13 +8,144 @@ interface Props {
   onRestart: () => void
 }
 
+interface RoadNodeProps {
+  step: RoadStep
+  index: number
+  total: number
+  scrollXProgress: any
+  above: boolean
+  isActive: boolean
+  onOpenStep: () => void
+}
+
+function RoadNode({ step, index, total, scrollXProgress, above, isActive, onOpenStep }: RoadNodeProps) {
+  const [hovered, setHovered] = useState(false)
+  const threshold = index === 0 ? 0 : (index / total) * 0.85
+  const start = Math.max(0, threshold - 0.08)
+  const end = threshold + 0.06
+
+  const iconX = useTransform(scrollXProgress, [start, end], [40, 0])
+  const labelX = useTransform(scrollXProgress, [start, end], [20, 0])
+
+  return (
+    <div
+      onMouseEnter={() => setHovered(true)}
+      onMouseLeave={() => setHovered(false)}
+      className="relative"
+    >
+      <motion.div
+        initial={{ opacity: 0, y: above ? -20 : 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: index * 0.08, duration: 0.5, ease: [0.34, 1.56, 0.64, 1] }}
+        onClick={onOpenStep}
+        className="flex flex-col items-center cursor-pointer select-none"
+        style={{
+          flexDirection: above ? 'column' : 'column-reverse',
+          width: 80,
+        }}
+      >
+      {/* icon */}
+      <motion.div
+        animate={{ y: isActive ? -6 : 0, scale: isActive ? 1.08 : 1 }}
+        whileHover={{ y: -4, scale: 1.05 }}
+        transition={{ type: 'spring', stiffness: 300, damping: 20 }}
+        style={{
+          marginBottom: above ? 12 : 0,
+          marginTop: above ? 0 : 12,
+          filter: 'drop-shadow(0 4px 10px rgba(26,35,64,0.15))',
+          x: iconX,
+        }}
+      >
+        <IsoIcon name={step.icon} />
+      </motion.div>
+
+      {/* dot on road */}
+      <motion.div
+        animate={{
+          background: isActive ? 'var(--amber)' : 'var(--navy)',
+          scale: isActive ? 1.4 : 1,
+        }}
+        className="w-3.5 h-3.5 rounded-full border-[3px] z-10"
+        style={{ borderColor: 'var(--bg)' }}
+      />
+
+      {/* label */}
+      <motion.div
+        style={{
+          marginTop: above ? 0 : 12,
+          marginBottom: above ? 12 : 0,
+          order: above ? 3 : -1,
+          x: labelX,
+          textAlign: 'center',
+        }}
+      >
+        <p className="font-serif text-[13px] font-medium leading-tight max-w-[100px]"
+          style={{ color: 'var(--navy)' }}>
+          {step.label}
+        </p>
+        <p className="font-mono text-[10px] mt-1" style={{ color: 'var(--amber)' }}>
+          {step.duration}
+        </p>
+        <p className="font-sans text-[10px] mt-2 leading-snug max-w-[110px]"
+          style={{ color: '#6B7280' }}>
+          {step.blurb ?? (step.description.split('.')[0] + '.')}
+        </p>
+      </motion.div>
+      </motion.div>
+
+      {/* hover popover */}
+      <AnimatePresence>
+        {hovered && (
+          <motion.div
+            initial={{ opacity: 0, scale: 0.92, y: above ? 8 : -8 }}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
+            exit={{ opacity: 0, scale: 0.92, y: above ? 8 : -8 }}
+            transition={{ type: 'spring', stiffness: 400, damping: 28 }}
+            className="absolute z-50 w-64 rounded-xl p-4 shadow-lg"
+            style={{
+              background: 'var(--cream)',
+              border: '1px solid var(--bg2)',
+              bottom: above ? 'auto' : '100%',
+              top: above ? '100%' : 'auto',
+              left: '50%',
+              transform: 'translateX(-50%)',
+              marginTop: above ? 12 : 0,
+              marginBottom: above ? 0 : 12,
+              pointerEvents: 'none',
+            }}
+          >
+            <p className="font-serif text-[13px] font-medium mb-2" style={{ color: 'var(--navy)' }}>
+              {step.label}
+            </p>
+            <p className="font-sans text-[12px] leading-relaxed mb-3" style={{ color: '#6B7280' }}>
+              {step.description}
+            </p>
+            <div className="flex flex-col gap-2">
+              {[
+                { key: "You'll need", val: step.requirement },
+                { key: 'Pro tip', val: step.tip },
+              ].map(({ key, val }) => (
+                <div key={key}>
+                  <span className="font-mono text-[9px] tracking-[0.12em] uppercase block mb-0.5"
+                    style={{ color: '#9CA3AF' }}>{key}</span>
+                  <span className="font-mono text-[11px]" style={{ color: 'var(--navy)' }}>{val}</span>
+                </div>
+              ))}
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </div>
+  )
+}
+
 export function RoadScreen({ data, onRestart }: Props) {
   const trackRef = useRef<HTMLDivElement>(null)
   const pathRef = useRef<SVGPathElement>(null)
-  const [activeStep, setActiveStep] = useState<RoadStep | null>(null)
   const [showHint, setShowHint] = useState(true)
   const [pathLength, setPathLength] = useState(9999)
   const [roadY, setRoadY] = useState(360)
+  const [visibleCount, setVisibleCount] = useState(1)
 
   const { scrollXProgress } = useScroll({ container: trackRef })
 
@@ -30,20 +161,21 @@ export function RoadScreen({ data, onRestart }: Props) {
     }
   }, [])
 
-  function openStep(step: RoadStep, idx: number) {
-    setActiveStep(step)
-    setShowHint(false)
-    // scroll node into view
-    const track = trackRef.current
-    if (!track) return
-    const nodeEl = document.getElementById(`node-${idx}`)
-    if (!nodeEl) return
-    const nodeCenter = nodeEl.offsetLeft + nodeEl.offsetWidth / 2
-    track.scrollTo({ left: nodeCenter - track.clientWidth / 2, behavior: 'smooth' })
-  }
+  useMotionValueEvent(scrollXProgress, 'change', (v) => {
+    if (v > 0.01) setShowHint(false)
 
-  const nodeSpacing = 220
-  const canvasWidth = 160 + data.steps.length * nodeSpacing + 160
+    const total = data.steps.length
+    let count = 1
+    for (let i = 1; i < total; i++) {
+      const threshold = (i / total) * 0.85
+      if (v >= threshold) count = i + 1
+    }
+    setVisibleCount(prev => Math.max(prev, count))
+  })
+
+  const nodeSpacing = 280
+  const trailingSpace = typeof window !== 'undefined' ? window.innerWidth * 0.4 : 400
+  const canvasWidth = 160 + data.steps.length * nodeSpacing + 160 + trailingSpace
 
   return (
     <div className="h-screen w-screen overflow-hidden relative" style={{ background: 'var(--bg)' }}>
@@ -94,7 +226,7 @@ export function RoadScreen({ data, onRestart }: Props) {
       <div
         ref={trackRef}
         className="absolute inset-0 overflow-x-auto overflow-y-hidden road-track pt-20"
-        style={{ cursor: 'grab' }}
+        style={{ cursor: 'grab', touchAction: 'pan-x' }}
       >
         <div
           className="relative h-full flex items-center"
@@ -118,65 +250,27 @@ export function RoadScreen({ data, onRestart }: Props) {
           </svg>
 
           {/* nodes */}
-          <div className="relative flex items-center z-10" style={{ gap: nodeSpacing - 80 }}>
+          <div className="relative flex items-center z-10" style={{ gap: 200 }}>
             {data.steps.map((step, i) => {
+              const isVisible = i < visibleCount
+              if (!isVisible) return null
               const above = i % 2 === 0
-              const isActive = activeStep?.id === step.id
               return (
                 <motion.div
                   key={step.id}
                   id={`node-${i}`}
-                  initial={{ opacity: 0, y: above ? -20 : 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: i * 0.08, duration: 0.5, ease: [0.34, 1.56, 0.64, 1] }}
-                  onClick={() => openStep(step, i)}
-                  className="flex flex-col items-center cursor-pointer select-none"
-                  style={{
-                    flexDirection: above ? 'column' : 'column-reverse',
-                    width: 80,
-                  }}
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
                 >
-                  {/* icon */}
-                  <motion.div
-                    animate={{ y: isActive ? -6 : 0, scale: isActive ? 1.08 : 1 }}
-                    whileHover={{ y: -4, scale: 1.05 }}
-                    transition={{ type: 'spring', stiffness: 300, damping: 20 }}
-                    style={{
-                      marginBottom: above ? 12 : 0,
-                      marginTop: above ? 0 : 12,
-                      filter: 'drop-shadow(0 4px 10px rgba(26,35,64,0.15))',
-                    }}
-                  >
-                    <IsoIcon name={step.icon} />
-                  </motion.div>
-
-                  {/* dot on road */}
-                  <motion.div
-                    animate={{
-                      background: isActive ? 'var(--amber)' : 'var(--navy)',
-                      scale: isActive ? 1.4 : 1,
-                    }}
-                    className="w-3.5 h-3.5 rounded-full border-[3px] z-10"
-                    style={{ borderColor: 'var(--bg)' }}
+                  <RoadNode
+                    step={step}
+                    index={i}
+                    total={data.steps.length}
+                    scrollXProgress={scrollXProgress}
+                    above={above}
+                    isActive={false}
+                    onOpenStep={() => {}}
                   />
-
-                  {/* label */}
-                  <div
-                    className="text-center"
-                    style={{
-                      marginTop: above ? 0 : 12,
-                      marginBottom: above ? 12 : 0,
-                      order: above ? 3 : -1,
-                    }}
-                  >
-                    <p className="font-serif text-[13px] font-medium leading-tight max-w-[100px]"
-                      style={{ color: 'var(--navy)' }}>
-                      {step.label}
-                    </p>
-                    <p className="font-mono text-[10px] mt-1" style={{ color: 'var(--amber)' }}>
-                      {step.duration}
-                    </p>
-                  </div>
                 </motion.div>
               )
             })}
@@ -204,65 +298,6 @@ export function RoadScreen({ data, onRestart }: Props) {
         )}
       </AnimatePresence>
 
-      {/* detail panel */}
-      <AnimatePresence>
-        {activeStep && (
-          <motion.div
-            initial={{ y: '100%' }}
-            animate={{ y: 0 }}
-            exit={{ y: '100%' }}
-            transition={{ type: 'spring', stiffness: 400, damping: 40 }}
-            className="fixed bottom-0 left-0 right-0 z-50 grid gap-6"
-            style={{
-              background: 'var(--cream)',
-              borderTop: '1px solid var(--bg2)',
-              padding: '28px 48px 32px',
-              gridTemplateColumns: '1fr auto',
-              alignItems: 'start',
-            }}
-          >
-            <div>
-              <p className="font-mono text-[10px] tracking-[0.15em] uppercase mb-1.5"
-                style={{ color: 'var(--amber)' }}>
-                Step {data.steps.findIndex(s => s.id === activeStep.id) + 1} of {data.steps.length}
-              </p>
-              <h3 className="font-serif text-[22px] mb-2.5" style={{ color: 'var(--navy)' }}>
-                {activeStep.label}
-              </h3>
-              <p className="text-[14px] leading-relaxed max-w-2xl" style={{ color: '#6B7280' }}>
-                {activeStep.description}
-              </p>
-              <div className="flex gap-5 mt-3.5 flex-wrap">
-                {[
-                  { key: 'Timeline', val: activeStep.duration },
-                  { key: "You'll need", val: activeStep.requirement },
-                  { key: 'Pro tip', val: activeStep.tip },
-                ].map(({ key, val }) => (
-                  <div key={key} className="flex flex-col gap-0.5">
-                    <span className="font-mono text-[9px] tracking-[0.12em] uppercase"
-                      style={{ color: '#9CA3AF' }}>
-                      {key}
-                    </span>
-                    <span className="font-mono text-[13px]" style={{ color: 'var(--navy)' }}>
-                      {val}
-                    </span>
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            <button
-              onClick={() => setActiveStep(null)}
-              className="w-8 h-8 rounded-full border flex items-center justify-center text-[18px] transition-all"
-              style={{ borderColor: 'var(--bg2)', color: '#6B7280' }}
-              onMouseEnter={e => (e.currentTarget.style.background = 'var(--bg2)')}
-              onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}
-            >
-              ✕
-            </button>
-          </motion.div>
-        )}
-      </AnimatePresence>
     </div>
   )
 }

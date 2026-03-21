@@ -7,7 +7,8 @@ export interface RoadStep {
   icon: IconName
   label: string
   duration: string
-  description: string
+  blurb?: string        // short always-visible sentence; falls back to first sentence of description
+  description: string  // full detail shown in hover popover
   requirement: string
   tip: string
 }

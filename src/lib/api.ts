@@ -1,4 +1,5 @@
 import type { Answers, RoadData } from '@/types'
+import h1bSteps from '@/data/h1b-steps.json'
 
 function buildPrompt(answers: Answers): string {
   return [
@@ -69,48 +70,5 @@ export async function generateRoadData(answers: Answers): Promise<RoadData> {
 }
 
 export function getFallbackData(): RoadData {
-  return {
-    visaType: 'H-1B',
-    tagline: 'A well-trodden path for skilled professionals.',
-    totalTime: '6-9 months',
-    difficulty: 'Moderate',
-    steps: [
-      {
-        id: 1, icon: 'briefcase', label: 'Job Offer', duration: 'Varies',
-        description: 'Secure a job offer from a U.S. employer willing to sponsor your H-1B. This is the foundation — your employer becomes your petitioner and champion through the process.',
-        requirement: 'Signed offer letter',
-        tip: 'Confirm early that your employer has done H-1B sponsorships before.',
-      },
-      {
-        id: 2, icon: 'document', label: 'LCA Filing', duration: '7 days',
-        description: 'Your employer files a Labor Condition Application with the Department of Labor, certifying they will pay the prevailing wage. Ellis handles this in about a week.',
-        requirement: 'Employer EIN and wage data',
-        tip: 'LCA approval must come before the H-1B petition can be filed.',
-      },
-      {
-        id: 3, icon: 'calendar', label: 'Lottery Registration', duration: 'March',
-        description: 'If your role is cap-subject, your employer registers you in the USCIS lottery each March. Selection is random — Ellis tracks every deadline so nothing slips.',
-        requirement: 'Registration by March 25',
-        tip: 'Only one registration per employer per person is allowed.',
-      },
-      {
-        id: 4, icon: 'stamp', label: 'Petition Filed', duration: '3-4 months',
-        description: 'Once selected, Ellis prepares and files your full H-1B petition with USCIS. Premium processing can cut the wait to 15 business days.',
-        requirement: 'Complete documentation package',
-        tip: 'Premium processing is worth the cost for peace of mind.',
-      },
-      {
-        id: 5, icon: 'shield', label: 'USCIS Approval', duration: '2 weeks',
-        description: 'USCIS issues your I-797 approval notice. If you are outside the U.S., you will attend a consulate interview to receive your visa stamp.',
-        requirement: 'Valid passport',
-        tip: 'Check your I-94 record online after entry — errors do happen.',
-      },
-      {
-        id: 6, icon: 'home', label: "You're Here", duration: 'Oct 1',
-        description: 'H-1B status begins October 1st. You can now legally work for your sponsoring employer. The path ahead includes renewals and potentially a green card.',
-        requirement: 'Maintain valid status',
-        tip: 'Ellis sends renewal reminders well before your status expires.',
-      },
-    ],
-  }
+  return h1bSteps as RoadData
 }

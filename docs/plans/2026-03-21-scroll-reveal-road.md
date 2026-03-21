@@ -10,6 +10,10 @@
 
 ---
 
+> **Data note (added after plan was written):** Real step data is ready at `src/data/h1b-steps.json` and is already wired into `getFallbackData()` in `src/lib/api.ts`. The `RoadStep` type now has a `blurb?: string` field — a short always-visible sentence distinct from `description`. In `RoadNode`, use `step.blurb ?? step.description.split('.')[0] + '.'` wherever the plan references `step.description.split('.')[0]`. The app boots directly to the road screen (`screen = 'road'`) with fallback data loaded, so you can see changes immediately at `http://localhost:5173`.
+
+---
+
 ### Task 1: Wire `useScroll` to the container and verify motion value
 
 **Files:**
