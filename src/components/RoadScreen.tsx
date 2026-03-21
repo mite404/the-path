@@ -288,6 +288,46 @@ function RoadTreadmill({ activeIndex }: TreadmillProps) {
   )
 }
 
+interface CarProps {
+  visible: boolean
+}
+
+function DrivingCar({ visible }: CarProps) {
+  return (
+    <AnimatePresence>
+      {visible && (
+        <motion.img
+          src={imgCar}
+          alt="VW Beetle"
+          initial={{ x: '-50vw', opacity: 0 }}
+          animate={{
+            x: 0,
+            opacity: 1,
+            rotate: [-0.5, 0.5, -0.5],
+          }}
+          exit={{ x: '-50vw', opacity: 0 }}
+          transition={{
+            x: { type: 'spring', stiffness: 120, damping: 20 },
+            opacity: { duration: 0.3 },
+            rotate: {
+              repeat: Infinity,
+              duration: 2,
+              ease: 'easeInOut',
+            },
+          }}
+          className="fixed pointer-events-none z-20"
+          style={{
+            top: CAR_TOP,
+            left: `${CAR_LEFT_PCT}%`,
+            width: CAR_WIDTH,
+            transform: 'translateX(-50%)',
+          }}
+        />
+      )}
+    </AnimatePresence>
+  )
+}
+
 interface Props {
   data: RoadData
   onRestart: () => void
