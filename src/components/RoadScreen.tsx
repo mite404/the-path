@@ -10,8 +10,14 @@ import imgBarcode from '@/assets/Barcode.png'
 import imgGlobe from '@/assets/Globe.png'
 import imgPlane from '@/assets/Plane.png'
 import imgStreet from '@/assets/Street-Tile.png'
+import _imgCar from '@/assets/VW-BUG-ISO_exported.png'
 
 const stepImages = [imgWork, imgQRCode, imgPackage, imgDocument, imgBarcode, imgGlobe, imgPlane]
+
+const _TILE_WIDTH = 200
+const _CAR_WIDTH = 90
+const _CAR_TOP = 'calc(52vh + 100px)'
+const _CAR_LEFT_PCT = 35
 
 interface MilestoneCardProps {
   step: RoadData['steps'][number]
