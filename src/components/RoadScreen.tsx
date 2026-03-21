@@ -109,6 +109,7 @@ export function RoadScreen({ data, onRestart }: Props) {
           scrollSnapType: 'x mandatory',
           scrollbarWidth: 'none',
           msOverflowStyle: 'none',
+          whiteSpace: 'nowrap',
         } as React.CSSProperties}
       >
         {/* Intro section */}
