@@ -335,17 +335,19 @@ interface Props {
 
 export function RoadScreen({ data, onRestart }: Props) {
   const containerRef = useRef<HTMLDivElement>(null)
-  const streetRef = useRef<HTMLDivElement>(null)
   const [activeIndex, setActiveIndex] = useState(0)
+  const fractionalRef = useRef(0)
 
-  // Street parallax
+  // Scroll handler: fractional progress + active index
   useEffect(() => {
     const container = containerRef.current
-    const street = streetRef.current
-    if (!container || !street) return
+    if (!container) return
 
     const handleScroll = () => {
-      street.style.backgroundPositionX = `-${container.scrollLeft * 0.3}px`
+      const scrollLeft = container.scrollLeft
+      const sectionWidth = container.offsetWidth
+      const rawProgress = scrollLeft / sectionWidth
+      fractionalRef.current = rawProgress - Math.floor(rawProgress)
 
       // Detect active section
       const sections = container.querySelectorAll<HTMLElement>('.snap-section')
@@ -409,21 +411,11 @@ export function RoadScreen({ data, onRestart }: Props) {
         </div>
       </header>
 
-      {/* Street tile — fixed mid-height band */}
-      <div
-        ref={streetRef}
-        className="fixed pointer-events-none z-10"
-        style={{
-          top: '52vh',
-          left: 0,
-          right: 0,
-          height: '200px',
-          backgroundImage: `url(${imgStreet})`,
-          backgroundRepeat: 'repeat-x',
-          backgroundSize: 'auto 200px',
-          backgroundPositionX: '0px',
-        }}
-      />
+      {/* Road treadmill */}
+      <RoadTreadmill activeIndex={activeIndex} fractionalRef={fractionalRef} />
+
+      {/* Driving car */}
+      <DrivingCar visible={activeIndex > 0} />
 
       {/* Snap scroll container */}
       <div
