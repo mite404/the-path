@@ -290,39 +290,61 @@ function RoadTreadmill({ activeIndex }: TreadmillProps) {
 
 interface CarProps {
   visible: boolean
+  activeIndex: number
 }
 
-function DrivingCar({ visible }: CarProps) {
+function DrivingCar({ visible, activeIndex }: CarProps) {
+  const [bounceKey, setBounceKey] = useState(0)
+
+  useEffect(() => {
+    if (activeIndex > 1) {
+      // Trigger bounce when landing on a new tile (not the first entrance)
+      setBounceKey(k => k + 1)
+    }
+  }, [activeIndex])
+
   return (
     <AnimatePresence>
       {visible && (
-        <motion.img
-          src={imgCar}
-          alt="VW Beetle"
+        <motion.div
+          className="fixed pointer-events-none z-20"
           initial={{ x: '-50vw', opacity: 0 }}
-          animate={{
-            x: 0,
-            opacity: 1,
-            rotate: [-0.5, 0.5, -0.5],
-          }}
+          animate={{ x: 0, opacity: 1 }}
           exit={{ x: '-50vw', opacity: 0 }}
           transition={{
             x: { type: 'spring', stiffness: 120, damping: 20 },
             opacity: { duration: 0.3 },
-            rotate: {
-              repeat: Infinity,
-              duration: 2,
-              ease: 'easeInOut',
-            },
           }}
-          className="fixed pointer-events-none z-20"
           style={{
             top: CAR_TOP,
             left: `${CAR_LEFT_PCT}%`,
-            width: CAR_WIDTH,
-            transform: 'translateX(-50%)',
           }}
-        />
+        >
+          <motion.img
+            key={bounceKey}
+            src={imgCar}
+            alt="VW Beetle"
+            initial={bounceKey > 0 ? { y: 0 } : false}
+            animate={{
+              y: [0, -8, 0],
+              rotate: [-0.5, 0.5, -0.5],
+            }}
+            transition={{
+              y: bounceKey > 0
+                ? { duration: 0.3, ease: [0.36, 0, 0.66, -0.56] }
+                : undefined,
+              rotate: {
+                repeat: Infinity,
+                duration: 2,
+                ease: 'easeInOut',
+              },
+            }}
+            style={{
+              width: CAR_WIDTH,
+              transform: 'translateX(-50%)',
+            }}
+          />
+        </motion.div>
       )}
     </AnimatePresence>
   )
@@ -415,7 +437,7 @@ export function RoadScreen({ data, onRestart }: Props) {
       <RoadTreadmill activeIndex={activeIndex} fractionalRef={fractionalRef} />
 
       {/* Driving car */}
-      <DrivingCar visible={activeIndex > 0} />
+      <DrivingCar visible={activeIndex > 0} activeIndex={activeIndex} />
 
       {/* Snap scroll container */}
       <div
