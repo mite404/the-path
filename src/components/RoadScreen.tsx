@@ -23,6 +23,7 @@ interface MilestoneCardProps {
 function MilestoneCard({ step, index, image, isFinal }: MilestoneCardProps) {
   const [visible, setVisible] = useState(false)
   const [hovered, setHovered] = useState(false)
+  const [mousePos, setMousePos] = useState({ x: 0, y: 0 })
   const ref = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
@@ -52,6 +53,7 @@ function MilestoneCard({ step, index, image, isFinal }: MilestoneCardProps) {
       style={{ position: 'relative' }}
       onMouseEnter={() => setHovered(true)}
       onMouseLeave={() => setHovered(false)}
+      onMouseMove={e => setMousePos({ x: e.clientX, y: e.clientY })}
     >
       {/* Popover */}
       <AnimatePresence>
@@ -62,11 +64,11 @@ function MilestoneCard({ step, index, image, isFinal }: MilestoneCardProps) {
             exit={{ opacity: 0, y: 8, scale: 0.96 }}
             transition={{ type: 'spring', stiffness: 400, damping: 28 }}
             style={{
-              position: 'absolute',
-              bottom: 'calc(100% + 12px)',
-              left: '50%',
-              transform: 'translateX(-50%)',
+              position: 'fixed',
+              top: mousePos.y + 16,
+              left: Math.min(mousePos.x - 160, window.innerWidth - 336),
               width: 320,
+              whiteSpace: 'normal',
               background: 'var(--ellis-dark)',
               borderRadius: 20,
               padding: 24,
@@ -106,7 +108,7 @@ function MilestoneCard({ step, index, image, isFinal }: MilestoneCardProps) {
       <motion.div
         initial={{ y: 30, opacity: 0 }}
         animate={visible ? { y: 0, opacity: 1 } : { y: 30, opacity: 0 }}
-        transition={{ type: 'spring', stiffness: 280, damping: 24 }}
+        transition={{ type: 'tween', duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
         style={{
           background: cardBg,
           backdropFilter: isFinal ? undefined : 'blur(16px)',
@@ -116,6 +118,7 @@ function MilestoneCard({ step, index, image, isFinal }: MilestoneCardProps) {
           borderRadius: 32,
           padding: 40,
           width: 420,
+          whiteSpace: 'normal',
           color: isFinal ? 'white' : 'var(--ellis-dark)',
         } as React.CSSProperties}
       >
