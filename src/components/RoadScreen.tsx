@@ -1,279 +1,171 @@
 import { useRef, useState, useEffect } from 'react'
-import { motion, AnimatePresence, useScroll, useTransform, useMotionValueEvent } from 'framer-motion'
-import { IsoIcon } from '@/components/IsoIcon'
-import type { RoadData, RoadStep } from '@/types'
+import { motion } from 'framer-motion'
+import type { RoadData } from '@/types'
+
+import imgStreet from '@/assets/Street-Tile.png'
 
 interface Props {
   data: RoadData
   onRestart: () => void
 }
 
-interface RoadNodeProps {
-  step: RoadStep
-  index: number
-  total: number
-  scrollXProgress: any
-}
-
-function RoadNode({ step, index, total, scrollXProgress }: RoadNodeProps) {
-  const [hovered, setHovered] = useState(false)
-  const [cursor, setCursor] = useState({ x: 0, y: 0 })
-  const threshold = index === 0 ? 0 : (index / total) * 0.85
-  const start = Math.max(0, threshold - 0.08)
-  const end = threshold + 0.06
-
-  const iconX = useTransform(scrollXProgress, [start, end], [40, 0])
-  const labelX = useTransform(scrollXProgress, [start, end], [20, 0])
-
-  return (
-    <div
-      onMouseEnter={() => setHovered(true)}
-      onMouseLeave={() => setHovered(false)}
-      onMouseMove={(e) => setCursor({ x: e.clientX, y: e.clientY })}
-      className="relative cursor-pointer select-none"
-    >
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: index * 0.08, duration: 0.5, ease: [0.34, 1.56, 0.64, 1] }}
-        className="flex flex-col items-center"
-        style={{
-          width: 80,
-        }}
-      >
-        {/* icon */}
-        <motion.div
-          whileHover={{ y: -4, scale: 1.05 }}
-          transition={{ type: 'spring', stiffness: 300, damping: 20 }}
-          style={{
-            marginBottom: 24,
-            filter: 'drop-shadow(0 4px 10px rgba(26,35,64,0.15))',
-            x: iconX,
-          }}
-        >
-          <IsoIcon name={step.icon} />
-        </motion.div>
-
-        {/* label */}
-        <motion.div
-          style={{
-            marginTop: 24,
-            x: labelX,
-            textAlign: 'center',
-          }}
-        >
-          <p className="font-serif text-[13px] font-medium leading-tight max-w-[100px]"
-            style={{ color: 'var(--navy)' }}>
-            {step.label}
-          </p>
-          <p className="font-mono text-[10px] mt-1" style={{ color: 'var(--amber)' }}>
-            {step.duration}
-          </p>
-          <p className="font-sans text-[10px] mt-2 leading-snug max-w-[110px]"
-            style={{ color: '#6B7280' }}>
-            {step.blurb ?? (step.description.split('.')[0] + '.')}
-          </p>
-        </motion.div>
-      </motion.div>
-
-      {/* hover popover */}
-      <AnimatePresence>
-        {hovered && (
-          <motion.div
-            initial={{ opacity: 0, scale: 0.95, y: 6 }}
-            animate={{ opacity: 1, scale: 1, y: 0 }}
-            exit={{ opacity: 0, scale: 0.95, y: 6 }}
-            transition={{ type: 'spring', stiffness: 400, damping: 28 }}
-            className="rounded-xl p-4 shadow-lg z-50 w-64"
-            style={{
-              background: 'var(--cream)',
-              border: '1px solid var(--bg2)',
-              position: 'fixed',
-              left: cursor.x + 20,
-              top: cursor.y - 20,
-              pointerEvents: 'none',
-            }}
-          >
-            <p className="font-serif text-[13px] font-medium mb-2" style={{ color: 'var(--navy)' }}>
-              {step.label}
-            </p>
-            <p className="font-sans text-[12px] leading-relaxed mb-3" style={{ color: '#6B7280' }}>
-              {step.description}
-            </p>
-            <div className="flex flex-col gap-2">
-              {[
-                { key: "You'll need", val: step.requirement },
-                { key: 'Pro tip', val: step.tip },
-              ].map(({ key, val }) => (
-                <div key={key}>
-                  <span className="font-mono text-[9px] tracking-[0.12em] uppercase block mb-0.5"
-                    style={{ color: '#9CA3AF' }}>{key}</span>
-                  <span className="font-mono text-[11px]" style={{ color: 'var(--navy)' }}>{val}</span>
-                </div>
-              ))}
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
-    </div>
-  )
-}
-
 export function RoadScreen({ data, onRestart }: Props) {
-  const trackRef = useRef<HTMLDivElement>(null)
-  const pathRef = useRef<SVGPathElement>(null)
-  const [showHint, setShowHint] = useState(true)
-  const [pathLength, setPathLength] = useState(9999)
-  const [roadY, setRoadY] = useState(360)
-  const [visibleCount, setVisibleCount] = useState(1)
+  const containerRef = useRef<HTMLDivElement>(null)
+  const streetRef = useRef<HTMLDivElement>(null)
+  const [activeIndex, setActiveIndex] = useState(0)
 
-  const { scrollXProgress } = useScroll({ container: trackRef })
-
+  // Street parallax
   useEffect(() => {
-    if (pathRef.current) {
-      setPathLength(pathRef.current.getTotalLength())
-    }
-  }, [data.steps.length])
+    const container = containerRef.current
+    const street = streetRef.current
+    if (!container || !street) return
 
-  useEffect(() => {
-    if (trackRef.current) {
-      setRoadY(trackRef.current.clientHeight / 2)
+    const handleScroll = () => {
+      street.style.backgroundPositionX = `-${container.scrollLeft * 0.3}px`
+
+      // Detect active section
+      const sections = container.querySelectorAll<HTMLElement>('.snap-section')
+      const width = container.offsetWidth
+      sections.forEach((section, index) => {
+        const rect = section.getBoundingClientRect()
+        if (rect.left >= -width / 2 && rect.left <= width / 2) {
+          setActiveIndex(index)
+        }
+      })
     }
+
+    container.addEventListener('scroll', handleScroll, { passive: true })
+    return () => container.removeEventListener('scroll', handleScroll)
   }, [])
 
-  useMotionValueEvent(scrollXProgress, 'change', (v) => {
-    if (v > 0.01) setShowHint(false)
-
-    const total = data.steps.length
-    let count = 1
-    for (let i = 1; i < total; i++) {
-      const threshold = (i / total) * 0.85
-      if (v >= threshold) count = i + 1
-    }
-    setVisibleCount(prev => Math.max(prev, count))
-  })
-
-  const nodeSpacing = 280
-  const trailingSpace = typeof window !== 'undefined' ? window.innerWidth * 0.4 : 400
-  const canvasWidth = 160 + data.steps.length * nodeSpacing + 160 + trailingSpace
+  // Total sections = intro + steps
+  const totalSections = data.steps.length + 1
 
   return (
-    <div className="h-screen w-screen overflow-hidden relative" style={{ background: 'var(--bg)' }}>
+    <div className="relative w-screen h-screen overflow-hidden" style={{ background: 'var(--ellis-bg)' }}>
 
-      {/* header */}
-      <div
-        className="absolute top-0 left-0 right-0 px-12 py-6 flex items-center justify-between z-20 pointer-events-none"
-        style={{ background: 'linear-gradient(to bottom, var(--bg) 60%, transparent)' }}
-      >
+      {/* Header */}
+      <header className="fixed top-0 left-0 w-full flex justify-between items-center py-6 px-8 lg:px-16 z-50"
+        style={{ background: 'rgba(241,245,245,0.85)', backdropFilter: 'blur(12px)' }}>
         <button
-          className="font-serif text-lg italic pointer-events-auto"
-          style={{ color: 'var(--navy)' }}
           onClick={onRestart}
+          className="font-serif text-2xl font-bold tracking-tighter"
+          style={{ color: 'var(--ellis-dark)' }}
         >
-          the path
+          ellis
         </button>
-
-        <div className="flex items-center gap-4 pointer-events-auto">
-          <div className="text-right">
-            <p className="font-serif text-[15px] font-medium" style={{ color: 'var(--navy)' }}>
-              {data.visaType}
-            </p>
-            <p className="font-mono text-[10px] tracking-[0.08em]" style={{ color: '#9CA3AF' }}>
-              {data.totalTime} · {data.difficulty}
-            </p>
-          </div>
+        <div className="flex items-center gap-6">
+          <span
+            className="font-mono text-xs uppercase tracking-widest"
+            style={{
+              color: 'var(--ellis-gray)',
+              opacity: activeIndex > 0 ? 1 : 0,
+              transition: 'opacity 0.3s ease',
+            }}
+          >
+            {activeIndex > 0 ? `0${activeIndex} / 0${data.steps.length}` : ''}
+          </span>
           <button
             onClick={onRestart}
-            className="font-mono text-[10px] tracking-[0.1em] border rounded-full px-3.5 py-1.5 transition-all"
-            style={{ color: '#6B7280', borderColor: 'var(--bg2)' }}
+            className="font-mono text-[10px] tracking-widest uppercase px-4 py-2 rounded-full border transition-all"
+            style={{ borderColor: 'var(--ellis-light)', color: 'var(--ellis-gray)' }}
             onMouseEnter={e => {
-              const b = e.currentTarget as HTMLButtonElement
-              b.style.borderColor = 'var(--navy)'
-              b.style.color = 'var(--navy)'
+              e.currentTarget.style.background = 'var(--ellis-dark)'
+              e.currentTarget.style.color = 'white'
+              e.currentTarget.style.borderColor = 'var(--ellis-dark)'
             }}
             onMouseLeave={e => {
-              const b = e.currentTarget as HTMLButtonElement
-              b.style.borderColor = 'var(--bg2)'
-              b.style.color = '#6B7280'
+              e.currentTarget.style.background = 'transparent'
+              e.currentTarget.style.color = 'var(--ellis-gray)'
+              e.currentTarget.style.borderColor = 'var(--ellis-light)'
             }}
           >
             Start over
           </button>
         </div>
-      </div>
+      </header>
 
-      {/* road track */}
+      {/* Street tile — fixed mid-height band */}
       <div
-        ref={trackRef}
-        className="absolute inset-0 overflow-x-auto overflow-y-hidden road-track pt-20"
-        style={{ cursor: 'grab', touchAction: 'pan-x' }}
-      >
-        <div
-          className="relative h-full flex items-center"
-          style={{ width: canvasWidth, paddingLeft: 120, paddingRight: 120 }}
-        >
-          {/* road line */}
-          <svg
-            className="absolute pointer-events-none"
-            style={{ left: 0, top: 0, width: canvasWidth, height: '100%' }}
-          >
-            <motion.path
-              ref={pathRef}
-              d={`M 60 ${roadY} L ${canvasWidth - 60} ${roadY}`}
-              stroke="var(--navy)"
-              strokeWidth="5"
-              strokeLinecap="round"
-              fill="none"
-              strokeDasharray={pathLength || undefined}
-              strokeDashoffset={pathLength ? useTransform(scrollXProgress, [0, 1], [pathLength, 0]) : 0}
-            />
-          </svg>
+        ref={streetRef}
+        className="fixed pointer-events-none z-10"
+        style={{
+          top: '52vh',
+          left: 0,
+          right: 0,
+          height: '200px',
+          backgroundImage: `url(${imgStreet})`,
+          backgroundRepeat: 'repeat-x',
+          backgroundSize: 'auto 200px',
+          backgroundPositionX: '0px',
+        }}
+      />
 
-          {/* nodes */}
-          <div className="relative flex items-center z-10" style={{ gap: 200 }}>
-            {data.steps.map((step, i) => {
-              const isVisible = i < visibleCount
-              if (!isVisible) return null
-              return (
-                <motion.div
-                  key={step.id}
-                  id={`node-${i}`}
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                >
-                  <RoadNode
-                    step={step}
-                    index={i}
-                    total={data.steps.length}
-                    scrollXProgress={scrollXProgress}
-                  />
-                </motion.div>
-              )
-            })}
+      {/* Snap scroll container */}
+      <div
+        ref={containerRef}
+        className="absolute inset-0 overflow-x-auto overflow-y-hidden"
+        style={{
+          scrollSnapType: 'x mandatory',
+          scrollbarWidth: 'none',
+          msOverflowStyle: 'none',
+        } as React.CSSProperties}
+      >
+        {/* Intro section */}
+        <div
+          className="snap-section inline-flex items-center justify-center flex-col"
+          style={{ width: '100vw', height: '100vh', scrollSnapAlign: 'center', verticalAlign: 'top' } as React.CSSProperties}
+        >
+          <div className="text-center relative z-20 px-12" style={{ marginTop: '-80px' }}>
+            <span className="font-mono text-xs uppercase tracking-[0.2em] block mb-4"
+              style={{ color: 'var(--ellis-gray)' }}>
+              U.S. Work Visa
+            </span>
+            <h1 className="font-serif leading-tight tracking-tight mb-6"
+              style={{ fontSize: 'clamp(48px, 8vw, 88px)', color: 'var(--ellis-dark)' }}>
+              {data.visaType} Candidate<br />Journey
+            </h1>
+            <p className="text-lg max-w-md mx-auto leading-relaxed mb-10"
+              style={{ color: 'var(--ellis-gray)', fontFamily: 'DM Sans, sans-serif' }}>
+              {data.tagline}
+            </p>
+            <div className="flex justify-center">
+              <div className="animate-bounce w-6 h-10 border-2 rounded-full flex justify-center p-1"
+                style={{ borderColor: 'var(--ellis-dark)' }}>
+                <div className="w-1 h-2 rounded-full" style={{ background: 'var(--ellis-dark)' }} />
+              </div>
+            </div>
           </div>
         </div>
+
+        {/* Milestone sections — placeholder divs for now */}
+        {data.steps.map((step, i) => (
+          <div
+            key={step.id}
+            className="snap-section inline-flex items-center justify-center"
+            style={{ width: '100vw', height: '100vh', scrollSnapAlign: 'center', verticalAlign: 'top' } as React.CSSProperties}
+          >
+            <div className="relative z-20 font-mono text-xs" style={{ color: 'var(--ellis-gray)', marginTop: '-80px' }}>
+              Step {i + 1}: {step.label} — placeholder
+            </div>
+          </div>
+        ))}
       </div>
 
-      {/* scroll hint */}
-      <AnimatePresence>
-        {showHint && (
+      {/* Progress dots */}
+      <div className="fixed bottom-10 left-1/2 -translate-x-1/2 flex gap-3 z-50">
+        {Array.from({ length: totalSections }).map((_, i) => (
           <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="fixed bottom-7 right-12 flex items-center gap-2 pointer-events-none z-30"
-          >
-            <span className="font-mono text-[10px] tracking-[0.08em]" style={{ color: '#9CA3AF' }}>
-              scroll to explore
-            </span>
-            <svg width="28" height="12" viewBox="0 0 28 12" fill="none">
-              <line x1="0" y1="6" x2="22" y2="6" stroke="#9CA3AF" strokeWidth="1.5" strokeLinecap="round"/>
-              <path d="M17 2L23 6L17 10" stroke="#9CA3AF" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-            </svg>
-          </motion.div>
-        )}
-      </AnimatePresence>
-
+            key={i}
+            animate={{
+              background: activeIndex === i ? 'var(--ellis-dark)' : 'var(--ellis-light)',
+              scale: activeIndex === i ? 1.5 : 1,
+            }}
+            transition={{ type: 'spring', stiffness: 300, damping: 20 }}
+            style={{ width: 10, height: 10, borderRadius: '50%' }}
+          />
+        ))}
+      </div>
     </div>
   )
 }
