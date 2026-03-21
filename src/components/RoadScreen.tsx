@@ -1,8 +1,203 @@
 import { useRef, useState, useEffect } from 'react'
-import { motion } from 'framer-motion'
+import { motion, AnimatePresence } from 'framer-motion'
 import type { RoadData } from '@/types'
 
+import imgWork from '@/assets/Work.png'
+import imgQRCode from '@/assets/QR-Code.png'
+import imgPackage from '@/assets/Package.png'
+import imgDocument from '@/assets/Document.png'
+import imgBarcode from '@/assets/Barcode.png'
+import imgGlobe from '@/assets/Globe.png'
+import imgPlane from '@/assets/Plane.png'
 import imgStreet from '@/assets/Street-Tile.png'
+
+const stepImages = [imgWork, imgQRCode, imgPackage, imgDocument, imgBarcode, imgGlobe, imgPlane]
+
+interface MilestoneCardProps {
+  step: RoadData['steps'][number]
+  index: number
+  image: string
+  isFinal: boolean
+}
+
+function MilestoneCard({ step, index, image, isFinal }: MilestoneCardProps) {
+  const [visible, setVisible] = useState(false)
+  const [hovered, setHovered] = useState(false)
+  const ref = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    const el = ref.current
+    if (!el) return
+    const observer = new IntersectionObserver(
+      ([entry]) => { if (entry.isIntersecting) setVisible(true) },
+      { threshold: 0.4 }
+    )
+    observer.observe(el)
+    return () => observer.disconnect()
+  }, [])
+
+  const isHighlight = index === 1 // Lottery Registration — cyan circle
+
+  const cardBg = isFinal
+    ? 'var(--ellis-dark)'
+    : 'rgba(255,255,255,0.62)'
+
+  const cardBorder = isFinal
+    ? 'none'
+    : '1px solid rgba(255,255,255,0.9)'
+
+  return (
+    <div
+      ref={ref}
+      style={{ position: 'relative' }}
+      onMouseEnter={() => setHovered(true)}
+      onMouseLeave={() => setHovered(false)}
+    >
+      {/* Popover */}
+      <AnimatePresence>
+        {hovered && (
+          <motion.div
+            initial={{ opacity: 0, y: 8, scale: 0.96 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: 8, scale: 0.96 }}
+            transition={{ type: 'spring', stiffness: 400, damping: 28 }}
+            style={{
+              position: 'absolute',
+              bottom: 'calc(100% + 12px)',
+              left: '50%',
+              transform: 'translateX(-50%)',
+              width: 320,
+              background: 'var(--ellis-dark)',
+              borderRadius: 20,
+              padding: 24,
+              zIndex: 100,
+              pointerEvents: 'none',
+              boxShadow: '0 20px 60px -10px rgba(0,0,20,0.3)',
+            }}
+          >
+            <p className="font-mono text-[10px] uppercase tracking-widest mb-2"
+              style={{ color: 'var(--ellis-cyan)' }}>
+              {step.label}
+            </p>
+            <p style={{ fontSize: 13, lineHeight: 1.65, color: 'rgba(255,255,255,0.8)', marginBottom: 16, fontFamily: 'DM Sans, sans-serif' }}>
+              {step.description}
+            </p>
+            <div style={{ borderTop: '1px solid rgba(255,255,255,0.1)', paddingTop: 14, display: 'flex', flexDirection: 'column', gap: 10 }}>
+              {[
+                { label: "You'll need", value: step.requirement },
+                { label: 'Pro tip', value: step.tip },
+              ].map(({ label, value }) => (
+                <div key={label}>
+                  <span className="font-mono text-[9px] uppercase tracking-widest block mb-0.5"
+                    style={{ color: 'var(--ellis-muted)' }}>
+                    {label}
+                  </span>
+                  <span className="font-mono text-[11px]" style={{ color: 'white' }}>
+                    {value}
+                  </span>
+                </div>
+              ))}
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Card */}
+      <motion.div
+        initial={{ y: 30, opacity: 0 }}
+        animate={visible ? { y: 0, opacity: 1 } : { y: 30, opacity: 0 }}
+        transition={{ type: 'spring', stiffness: 280, damping: 24 }}
+        style={{
+          background: cardBg,
+          backdropFilter: isFinal ? undefined : 'blur(16px)',
+          WebkitBackdropFilter: isFinal ? undefined : 'blur(16px)',
+          border: cardBorder,
+          boxShadow: '0 10px 40px -10px rgba(0,0,0,0.08)',
+          borderRadius: 32,
+          padding: 40,
+          width: 420,
+          color: isFinal ? 'white' : 'var(--ellis-dark)',
+        } as React.CSSProperties}
+      >
+        {/* Number + icon row */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 20, marginBottom: 28 }}>
+          <motion.div
+            initial={{ scale: 0.7, opacity: 0 }}
+            animate={visible ? { scale: 1, opacity: 1 } : { scale: 0.7, opacity: 0 }}
+            transition={{ type: 'spring', stiffness: 280, damping: 24, delay: 0.1 }}
+            style={{
+              width: 52,
+              height: 52,
+              borderRadius: '50%',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              fontFamily: 'JetBrains Mono, monospace',
+              fontWeight: 700,
+              fontSize: 16,
+              flexShrink: 0,
+              background: isFinal ? 'var(--ellis-cyan)' : isHighlight ? 'var(--ellis-cyan)' : 'transparent',
+              border: isFinal || isHighlight ? 'none' : `2px solid ${isFinal ? 'white' : 'var(--ellis-dark)'}`,
+              color: isFinal ? 'var(--ellis-dark)' : isHighlight ? 'var(--ellis-dark)' : 'inherit',
+            }}
+          >
+            {isFinal ? (
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3">
+                <polyline points="20 6 9 17 4 12" />
+              </svg>
+            ) : (
+              `0${index + 1}`
+            )}
+          </motion.div>
+
+          <motion.img
+            src={image}
+            alt={step.label}
+            initial={{ x: 40, opacity: 0 }}
+            animate={visible ? { x: 0, opacity: 1 } : { x: 40, opacity: 0 }}
+            transition={{ type: 'spring', stiffness: 280, damping: 24, delay: 0.18 }}
+            style={{ width: 72, height: 72, objectFit: 'contain' }}
+          />
+        </div>
+
+        {/* Text */}
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={visible ? { opacity: 1 } : { opacity: 0 }}
+          transition={{ duration: 0.4, delay: 0.26 }}
+        >
+          <p className="font-mono text-[10px] uppercase tracking-widest mb-1"
+            style={{ color: isFinal ? 'var(--ellis-cyan)' : 'var(--ellis-gray)' }}>
+            {step.duration}
+          </p>
+          <h2 className="font-serif mb-3"
+            style={{ fontSize: 32, lineHeight: 1.1, color: isFinal ? 'white' : 'var(--ellis-dark)' }}>
+            {step.label}
+          </h2>
+          <p style={{
+            fontSize: 14,
+            lineHeight: 1.65,
+            color: isFinal ? 'rgba(255,255,255,0.7)' : 'var(--ellis-gray)',
+            fontFamily: 'DM Sans, sans-serif',
+          }}>
+            {step.blurb ?? step.description.split('.')[0] + '.'}
+          </p>
+
+          {isFinal && (
+            <button
+              className="font-mono text-[11px] uppercase tracking-widest mt-8 px-6 py-3 rounded-full transition-colors"
+              style={{ background: 'var(--ellis-cyan)', color: 'var(--ellis-dark)', fontWeight: 700 }}
+              onMouseEnter={e => (e.currentTarget.style.background = 'white')}
+              onMouseLeave={e => (e.currentTarget.style.background = 'var(--ellis-cyan)')}
+            >
+              Talk to Ellis
+            </button>
+          )}
+        </motion.div>
+      </motion.div>
+    </div>
+  )
+}
 
 interface Props {
   data: RoadData
@@ -139,15 +334,20 @@ export function RoadScreen({ data, onRestart }: Props) {
           </div>
         </div>
 
-        {/* Milestone sections — placeholder divs for now */}
+        {/* Milestone sections */}
         {data.steps.map((step, i) => (
           <div
             key={step.id}
             className="snap-section inline-flex items-center justify-center"
             style={{ width: '100vw', height: '100vh', scrollSnapAlign: 'center', verticalAlign: 'top' } as React.CSSProperties}
           >
-            <div className="relative z-20 font-mono text-xs" style={{ color: 'var(--ellis-gray)', marginTop: '-80px' }}>
-              Step {i + 1}: {step.label} — placeholder
+            <div className="relative z-20" style={{ marginTop: '-80px' }}>
+              <MilestoneCard
+                step={step}
+                index={i}
+                image={stepImages[i]}
+                isFinal={i === data.steps.length - 1}
+              />
             </div>
           </div>
         ))}
