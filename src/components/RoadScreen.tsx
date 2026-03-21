@@ -10,14 +10,14 @@ import imgBarcode from '@/assets/Barcode.png'
 import imgGlobe from '@/assets/Globe.png'
 import imgPlane from '@/assets/Plane.png'
 import imgStreet from '@/assets/Street-Tile.png'
-import _imgCar from '@/assets/VW-BUG-ISO_exported.png'
+import imgCar from '@/assets/VW-BUG-ISO_exported.png'
 
 const stepImages = [imgWork, imgQRCode, imgPackage, imgDocument, imgBarcode, imgGlobe, imgPlane]
 
-const _TILE_WIDTH = 200
-const _CAR_WIDTH = 90
-const _CAR_TOP = 'calc(52vh + 100px)'
-const _CAR_LEFT_PCT = 35
+const TILE_WIDTH = 200
+const CAR_WIDTH = 90
+const CAR_TOP = 'calc(52vh + 100px)'
+const CAR_LEFT_PCT = 35
 
 interface MilestoneCardProps {
   step: RoadData['steps'][number]
@@ -204,6 +204,86 @@ function MilestoneCard({ step, index, image, isFinal }: MilestoneCardProps) {
           )}
         </motion.div>
       </motion.div>
+    </div>
+  )
+}
+
+interface TreadmillProps {
+  activeIndex: number
+  fractionalRef: React.RefObject<number>
+}
+
+function RoadTreadmill({ activeIndex }: TreadmillProps) {
+  // Tile index in step-space (intro = no tile index, step 1 = tile 0, etc.)
+  const tileIndex = activeIndex - 1
+  const prevTileIndex = tileIndex - 1
+
+  return (
+    <div
+      className="fixed pointer-events-none z-10"
+      style={{ top: '52vh', left: 0, right: 0, height: 200 }}
+    >
+      {/* Behind tile — falling away */}
+      <AnimatePresence>
+        {prevTileIndex >= 0 && (
+          <motion.img
+            key={`behind-${prevTileIndex}`}
+            src={imgStreet}
+            initial={false}
+            exit={{
+              y: 400,
+              rotate: -12,
+              opacity: 0,
+            }}
+            transition={{ duration: 0.6, ease: [0.55, 0, 1, 0.45] }}
+            style={{
+              position: 'absolute',
+              left: `calc(${CAR_LEFT_PCT}% - ${TILE_WIDTH}px)`,
+              width: TILE_WIDTH,
+              height: 200,
+            }}
+          />
+        )}
+      </AnimatePresence>
+
+      {/* Current tile — under the car */}
+      <AnimatePresence mode="popLayout">
+        {tileIndex >= 0 && (
+          <motion.img
+            key={`current-${tileIndex}`}
+            src={imgStreet}
+            initial={false}
+            animate={{ x: 0, y: 0 }}
+            style={{
+              position: 'absolute',
+              left: `${CAR_LEFT_PCT}%`,
+              width: TILE_WIDTH,
+              height: 200,
+            }}
+          />
+        )}
+      </AnimatePresence>
+
+      {/* Ahead tile — dropping from sky */}
+      <AnimatePresence>
+        <motion.img
+          key={`ahead-${tileIndex + 1}`}
+          src={imgStreet}
+          initial={{ y: -300, opacity: 0 }}
+          animate={{ y: 0, opacity: 1 }}
+          transition={{
+            type: 'spring',
+            stiffness: 300,
+            damping: 20,
+          }}
+          style={{
+            position: 'absolute',
+            left: `calc(${CAR_LEFT_PCT}% + ${TILE_WIDTH}px)`,
+            width: TILE_WIDTH,
+            height: 200,
+          }}
+        />
+      </AnimatePresence>
     </div>
   )
 }
