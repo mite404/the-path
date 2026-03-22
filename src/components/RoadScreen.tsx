@@ -15,9 +15,12 @@ import imgCar from '@/assets/VW-BUG-ISO_exported.png'
 const stepImages = [imgWork, imgQRCode, imgPackage, imgDocument, imgBarcode, imgGlobe, imgPlane]
 
 const TILE_WIDTH = 376
-const CAR_WIDTH = 220
-const CAR_TOP = 'calc(52vh + 60px)'
-const CAR_LEFT_PCT = 50
+const TILE_HEIGHT = 251
+// Isometric offset per tile step: right and up along the ~45° iso axis
+// 2:1 isometric ratio: dx = half tile width, dy = quarter tile width
+const TILE_DX = TILE_WIDTH / 2   // 188px right
+const TILE_DY = TILE_WIDTH / 4   // 94px up
+const CAR_WIDTH = 200
 
 interface MilestoneCardProps {
   step: RoadData['steps'][number]
@@ -214,20 +217,25 @@ interface TreadmillProps {
 }
 
 function RoadTreadmill({ activeIndex }: TreadmillProps) {
-  // Tile index in step-space (intro = no tile index, step 1 = tile 0, etc.)
   const tileIndex = activeIndex - 1
-  const prevTileIndex = tileIndex - 1
+
+  // Position a tile at an offset along the isometric diagonal
+  // offsetIndex: -1 = behind (lower-left), 0 = current (center), +1 = ahead (upper-right)
+  const tileAt = (offsetIndex: number): React.CSSProperties => ({
+    position: 'fixed',
+    left: `calc(50vw - ${TILE_WIDTH / 2}px + ${offsetIndex * TILE_DX}px)`,
+    top: `calc(58vh - ${TILE_HEIGHT / 2}px - ${offsetIndex * TILE_DY}px)`,
+    width: TILE_WIDTH,
+    height: TILE_HEIGHT,
+  })
 
   return (
-    <div
-      className="fixed pointer-events-none z-10"
-      style={{ top: '52vh', left: 0, right: 0, height: 200 }}
-    >
-      {/* Behind tile — falling away */}
+    <div className="pointer-events-none" style={{ zIndex: 10 }}>
+      {/* Behind tile (lower-left) — falling away */}
       <AnimatePresence>
-        {prevTileIndex >= 0 && (
+        {tileIndex > 0 && (
           <motion.img
-            key={`behind-${prevTileIndex}`}
+            key={`behind-${tileIndex - 1}`}
             src={imgStreet}
             initial={false}
             exit={{
@@ -236,35 +244,21 @@ function RoadTreadmill({ activeIndex }: TreadmillProps) {
               opacity: 0,
             }}
             transition={{ duration: 0.6, ease: [0.55, 0, 1, 0.45] }}
-            style={{
-              position: 'absolute',
-              left: `calc(${CAR_LEFT_PCT}% - ${TILE_WIDTH * 1.5}px)`,
-              width: TILE_WIDTH,
-              height: 200,
-            }}
+            style={tileAt(-1)}
           />
         )}
       </AnimatePresence>
 
-      {/* Current tile — under the car */}
-      <AnimatePresence mode="popLayout">
-        {tileIndex >= 0 && (
-          <motion.img
-            key={`current-${tileIndex}`}
-            src={imgStreet}
-            initial={false}
-            animate={{ x: 0, y: 0 }}
-            style={{
-              position: 'absolute',
-              left: `calc(${CAR_LEFT_PCT}% - ${TILE_WIDTH / 2}px)`,
-              width: TILE_WIDTH,
-              height: 200,
-            }}
-          />
-        )}
-      </AnimatePresence>
+      {/* Current tile — center, under the car */}
+      {tileIndex >= 0 && (
+        <img
+          key={`current-${tileIndex}`}
+          src={imgStreet}
+          style={tileAt(0)}
+        />
+      )}
 
-      {/* Ahead tile — dropping from sky */}
+      {/* Ahead tile (upper-right) — dropping from sky */}
       <AnimatePresence>
         <motion.img
           key={`ahead-${tileIndex + 1}`}
@@ -276,12 +270,7 @@ function RoadTreadmill({ activeIndex }: TreadmillProps) {
             stiffness: 300,
             damping: 20,
           }}
-          style={{
-            position: 'absolute',
-            left: `calc(${CAR_LEFT_PCT}% + ${TILE_WIDTH / 2}px)`,
-            width: TILE_WIDTH,
-            height: 200,
-          }}
+          style={tileAt(1)}
         />
       </AnimatePresence>
     </div>
@@ -300,7 +289,6 @@ function DrivingCar({ visible, activeIndex, fractionalRef }: CarProps) {
 
   useEffect(() => {
     if (activeIndex > 1) {
-      // Trigger bounce when landing on a new tile (not the first entrance)
       setBounceKey(k => k + 1)
     }
   }, [activeIndex])
@@ -332,8 +320,9 @@ function DrivingCar({ visible, activeIndex, fractionalRef }: CarProps) {
             opacity: { duration: 0.3 },
           }}
           style={{
-            top: CAR_TOP,
-            left: `${CAR_LEFT_PCT}%`,
+            // Center the car on the page, on the road surface of the center tile
+            top: `calc(58vh - ${CAR_WIDTH * 0.36}px)`,
+            left: `calc(50vw - ${CAR_WIDTH / 2}px)`,
           }}
         >
           <div ref={driftRef}>
@@ -356,10 +345,7 @@ function DrivingCar({ visible, activeIndex, fractionalRef }: CarProps) {
                   ease: 'easeInOut',
                 },
               }}
-              style={{
-                width: CAR_WIDTH,
-                transform: 'translateX(-50%)',
-              }}
+              style={{ width: CAR_WIDTH }}
             />
           </div>
         </motion.div>
