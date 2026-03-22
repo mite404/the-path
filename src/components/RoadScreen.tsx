@@ -357,12 +357,17 @@ function DrivingCar({ visible, activeIndex, fractionalRef }: CarProps) {
 interface Props {
   data: RoadData
   onRestart: () => void
+  onStepChange?: (stepIndex: number) => void
 }
 
-export function RoadScreen({ data, onRestart }: Props) {
+export function RoadScreen({ data, onRestart, onStepChange }: Props) {
   const containerRef = useRef<HTMLDivElement>(null)
   const [activeIndex, setActiveIndex] = useState(0)
   const fractionalRef = useRef(0)
+
+  useEffect(() => {
+    onStepChange?.(activeIndex)
+  }, [activeIndex, onStepChange])
 
   // Scroll handler: fractional progress + active index
   useEffect(() => {
