@@ -85,7 +85,7 @@ export const H1B_STEPS: H1BStep[] = [
     duration: 'October 1st',
     phase: 'Arrival',
     blurb: 'You land, your I-94 is stamped, and your 3-year H-1B clock starts. Welcome.',
-    description: 'H-1B status is tied to the federal fiscal year — work cannot legally begin before October 1st regardless of when your petition was approved. Your initial status is valid for 3 years, extendable to 6. H-1B is dual-intent: you can pursue a green card without jeopardizing your status.',
+    description: 'H-1B status is tied to the federal fiscal year — work cannot legally begin before October 1st regardless of when your petition was approved. Your initial status is granted in 3-year terms, with extensions possible for another 3 years, up to a 6-year maximum. Extensions beyond 6 years are only possible with a pending green card application. H-1B is dual-intent: you can pursue a green card without jeopardizing your status.',
     requirement: 'Valid visa stamp + I-797 approval notice in hand',
     tip: 'Check your I-94 record at cbp.dhs.gov/I94 immediately after arrival. The I-94 — not your visa stamp — governs your authorized stay period and end date.',
     exampleQuestion: 'What does dual-intent mean for getting a green card?',

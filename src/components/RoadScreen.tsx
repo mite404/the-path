@@ -224,7 +224,7 @@ function RoadTreadmill({ activeIndex }: TreadmillProps) {
   const tileAt = (offsetIndex: number): React.CSSProperties => ({
     position: 'fixed',
     left: `calc(50vw - ${TILE_WIDTH / 2}px + ${offsetIndex * TILE_DX}px)`,
-    top: `calc(58vh - ${TILE_HEIGHT / 2}px - ${offsetIndex * TILE_DY}px)`,
+    top: `calc(78vh - ${TILE_HEIGHT / 2}px - ${offsetIndex * TILE_DY}px)`,
     width: TILE_WIDTH,
     height: TILE_HEIGHT,
   })
@@ -258,20 +258,22 @@ function RoadTreadmill({ activeIndex }: TreadmillProps) {
         />
       )}
 
-      {/* Ahead tile (upper-right) — dropping from sky */}
+      {/* Ahead tile (upper-right) — dropping from sky, only after intro */}
       <AnimatePresence>
-        <motion.img
-          key={`ahead-${tileIndex + 1}`}
-          src={imgStreet}
-          initial={{ y: -300, opacity: 0 }}
-          animate={{ y: 0, opacity: 1 }}
-          transition={{
-            type: 'spring',
-            stiffness: 300,
-            damping: 20,
-          }}
-          style={tileAt(1)}
-        />
+        {tileIndex >= 0 && (
+          <motion.img
+            key={`ahead-${tileIndex + 1}`}
+            src={imgStreet}
+            initial={{ y: -300, opacity: 0 }}
+            animate={{ y: 0, opacity: 1 }}
+            transition={{
+              type: 'spring',
+              stiffness: 300,
+              damping: 20,
+            }}
+            style={tileAt(1)}
+          />
+        )}
       </AnimatePresence>
     </div>
   )
@@ -320,8 +322,8 @@ function DrivingCar({ visible, activeIndex, fractionalRef }: CarProps) {
             opacity: { duration: 0.3 },
           }}
           style={{
-            // Center the car on the page, on the road surface of the center tile
-            top: `calc(58vh - ${CAR_WIDTH * 0.36}px)`,
+            // Car sits on the road surface of the center tile (below the card)
+            top: `calc(78vh - ${CAR_WIDTH * 0.36}px)`,
             left: `calc(50vw - ${CAR_WIDTH / 2}px)`,
           }}
         >
@@ -354,6 +356,63 @@ function DrivingCar({ visible, activeIndex, fractionalRef }: CarProps) {
   )
 }
 
+const CONFETTI_COLORS = ['#78f0ff', '#ff6b8a', '#ffd93d', '#6bff8a', '#b478ff', '#ff9f43']
+
+function Confetti({ active }: { active: boolean }) {
+  const [particles] = useState(() =>
+    Array.from({ length: 40 }, (_, i) => ({
+      id: i,
+      x: (Math.random() - 0.5) * 600,
+      y: -(Math.random() * 500 + 200),
+      rotate: Math.random() * 720 - 360,
+      color: CONFETTI_COLORS[i % CONFETTI_COLORS.length],
+      size: Math.random() * 8 + 4,
+      delay: Math.random() * 0.3,
+      isCircle: Math.random() > 0.5,
+    }))
+  )
+
+  return (
+    <AnimatePresence>
+      {active && (
+        <div className="fixed inset-0 pointer-events-none z-[70]">
+          {particles.map(p => (
+            <motion.div
+              key={p.id}
+              initial={{
+                x: '50vw',
+                y: '40vh',
+                opacity: 1,
+                scale: 0,
+                rotate: 0,
+              }}
+              animate={{
+                x: `calc(50vw + ${p.x}px)`,
+                y: `calc(40vh + ${p.y}px)`,
+                opacity: [1, 1, 0],
+                scale: [0, 1, 0.8],
+                rotate: p.rotate,
+              }}
+              transition={{
+                duration: 1.4,
+                delay: p.delay,
+                ease: [0.22, 1, 0.36, 1],
+              }}
+              style={{
+                position: 'absolute',
+                width: p.size,
+                height: p.isCircle ? p.size : p.size * 2.5,
+                borderRadius: p.isCircle ? '50%' : 2,
+                background: p.color,
+              }}
+            />
+          ))}
+        </div>
+      )}
+    </AnimatePresence>
+  )
+}
+
 interface Props {
   data: RoadData
   onRestart: () => void
@@ -364,9 +423,17 @@ export function RoadScreen({ data, onRestart, onStepChange }: Props) {
   const containerRef = useRef<HTMLDivElement>(null)
   const [activeIndex, setActiveIndex] = useState(0)
   const fractionalRef = useRef(0)
+  const [showConfetti, setShowConfetti] = useState(false)
+  const confettiFiredRef = useRef(false)
 
   useEffect(() => {
     onStepChange?.(activeIndex)
+    // Fire confetti once when reaching step 1 (Job Offer)
+    if (activeIndex === 1 && !confettiFiredRef.current) {
+      confettiFiredRef.current = true
+      setShowConfetti(true)
+      setTimeout(() => setShowConfetti(false), 2000)
+    }
   }, [activeIndex, onStepChange])
 
   // Scroll handler: fractional progress + active index
@@ -400,6 +467,9 @@ export function RoadScreen({ data, onRestart, onStepChange }: Props) {
 
   return (
     <div className="relative w-screen h-screen overflow-hidden" style={{ background: 'var(--ellis-bg)' }}>
+
+      {/* Confetti burst on Job Offer */}
+      <Confetti active={showConfetti} />
 
       {/* Header */}
       <header className="fixed top-0 left-0 w-full flex justify-between items-center py-6 px-8 lg:px-16 z-50"
