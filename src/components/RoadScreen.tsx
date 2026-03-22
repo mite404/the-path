@@ -14,10 +14,10 @@ import imgCar from '@/assets/VW-BUG-ISO_exported.png'
 
 const stepImages = [imgWork, imgQRCode, imgPackage, imgDocument, imgBarcode, imgGlobe, imgPlane]
 
-const TILE_WIDTH = 200
-const CAR_WIDTH = 90
-const CAR_TOP = 'calc(52vh + 100px)'
-const CAR_LEFT_PCT = 35
+const TILE_WIDTH = 376
+const CAR_WIDTH = 220
+const CAR_TOP = 'calc(52vh + 60px)'
+const CAR_LEFT_PCT = 50
 
 interface MilestoneCardProps {
   step: RoadData['steps'][number]
@@ -238,7 +238,7 @@ function RoadTreadmill({ activeIndex }: TreadmillProps) {
             transition={{ duration: 0.6, ease: [0.55, 0, 1, 0.45] }}
             style={{
               position: 'absolute',
-              left: `calc(${CAR_LEFT_PCT}% - ${TILE_WIDTH}px)`,
+              left: `calc(${CAR_LEFT_PCT}% - ${TILE_WIDTH * 1.5}px)`,
               width: TILE_WIDTH,
               height: 200,
             }}
@@ -256,7 +256,7 @@ function RoadTreadmill({ activeIndex }: TreadmillProps) {
             animate={{ x: 0, y: 0 }}
             style={{
               position: 'absolute',
-              left: `${CAR_LEFT_PCT}%`,
+              left: `calc(${CAR_LEFT_PCT}% - ${TILE_WIDTH / 2}px)`,
               width: TILE_WIDTH,
               height: 200,
             }}
@@ -278,7 +278,7 @@ function RoadTreadmill({ activeIndex }: TreadmillProps) {
           }}
           style={{
             position: 'absolute',
-            left: `calc(${CAR_LEFT_PCT}% + ${TILE_WIDTH}px)`,
+            left: `calc(${CAR_LEFT_PCT}% + ${TILE_WIDTH / 2}px)`,
             width: TILE_WIDTH,
             height: 200,
           }}
