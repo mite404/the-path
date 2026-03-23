@@ -235,3 +235,68 @@ The `left` clamp (`window.innerWidth - 336`) prevents the popover from clipping 
 **Why `inline-flex` + `vertical-align: top` for snap sections?** A `display: flex` parent wrapper breaks Safari's `scroll-snap` — snap points inside a flex container aren't reliably honored. `inline-flex` children in a `nowrap` container is the cross-browser safe pattern.
 
 **Why `position: fixed` for the popover?** Card-relative absolute positioning (`bottom: 100%`) breaks when the card is near the viewport top. Fixed positioning with cursor coordinates makes the popover position independent of the card's location in the document — the top edge is always below the cursor regardless of scroll state or card placement.
+
+---
+
+## Pre-Deployment: API Key Security Fix
+
+**🚨 CRITICAL — Must complete before production deployment**
+
+### The Problem
+Both `generateRoadData()` (src/lib/api.ts) and `streamChat()` (src/lib/chat.ts) read `import.meta.env.VITE_ANTHROPIC_API_KEY` and send it directly from the browser to Anthropic's API.
+
+During **development** (`bun dev`), Vite's dev proxy (vite.config.ts) intercepts these requests server-side, so the key stays safe on the Vite server.
+
+During **production** (`bun build`), Vite **inlines the entire API key value** into the JavaScript bundle at build time. When deployed, browsers receive the actual API key and can use it to make API calls, exposing your Anthropic credits and system prompts.
+
+### The Solution
+Create a backend endpoint that handles the Anthropic API calls on your server. The key lives in the server's environment variables, never sent to the browser.
+
+**Architecture:**
+```
+Browser → Your Backend (/api/roadmap, /api/chat) → Anthropic API
+         (no key here)                        (key in process.env)
+```
+
+### Checklist Before Deploying
+
+- [ ] Create a backend route (Node/Express, Vercel function, Netlify function, etc.) that:
+  - Receives POST request from browser with `{ answers }` or `{ messages, activeStep }`
+  - Reads `VITE_ANTHROPIC_API_KEY` from `process.env` (or your hosting provider's secrets manager)
+  - Makes the actual API call to Anthropic
+  - Returns the response to the browser
+
+- [ ] Update `src/lib/api.ts` — change `generateRoadData()` to call `/api/roadmap` (your backend endpoint) instead of hitting Anthropic directly
+
+- [ ] Update `src/lib/chat.ts` — change `streamChat()` to call `/api/chat` (your backend endpoint) instead of hitting Anthropic directly
+
+- [ ] Add `VITE_ANTHROPIC_API_KEY` to your production environment on your hosting provider (Vercel, Netlify, Railway, etc.)
+  - **Never** commit `.env.local` or any real API keys to git
+
+- [ ] Remove the dev proxy from `vite.config.ts` once backend endpoints are live (it's no longer needed)
+
+**Example backend endpoint** (Express):
+```typescript
+app.post('/api/roadmap', async (req, res) => {
+  const apiKey = process.env.VITE_ANTHROPIC_API_KEY
+  const { answers } = req.body
+
+  const response = await fetch('https://api.anthropic.com/v1/messages', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'x-api-key': apiKey,  // ← lives on server, never sent to browser
+    },
+    body: JSON.stringify({
+      model: 'claude-sonnet-4-20250514',
+      max_tokens: 1000,
+      messages: [{ role: 'user', content: buildPrompt(answers) }],
+    }),
+  })
+
+  const data = await response.json()
+  res.json(data)
+})
+```
+
+**Why this matters:** Without this fix, anyone can inspect the browser's JavaScript, find your API key, and exhaust your Anthropic quota or access sensitive system prompts.

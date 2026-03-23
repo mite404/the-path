@@ -221,23 +221,26 @@ function RoadTreadmill({ activeIndex }: TreadmillProps) {
 
   // Position a tile at an offset along the isometric diagonal
   // offsetIndex: -1 = behind (lower-left), 0 = current (center), +1 = ahead (upper-right)
+  // z-index: inverted for isometric — lower tiles (closer to viewer) must overlap upper tiles
   const tileAt = (offsetIndex: number): React.CSSProperties => ({
     position: 'fixed',
     left: `calc(50vw - ${TILE_WIDTH / 2}px + ${offsetIndex * TILE_DX}px)`,
     top: `calc(78vh - ${TILE_HEIGHT / 2}px - ${offsetIndex * TILE_DY}px)`,
     width: TILE_WIDTH,
     height: TILE_HEIGHT,
+    zIndex: offsetIndex === -1 ? 3 : offsetIndex === 0 ? 2 : 1,
   })
 
   return (
-    <div className="pointer-events-none" style={{ zIndex: 10 }}>
-      {/* Behind tile (lower-left) — falling away */}
+    <div className="pointer-events-none fixed inset-0" style={{ zIndex: 10 }}>
+      {/* Behind tile (lower-left) — visible while present, falls away on exit */}
       <AnimatePresence>
         {tileIndex > 0 && (
           <motion.img
             key={`behind-${tileIndex - 1}`}
             src={imgStreet}
             initial={false}
+            animate={{ y: 0, opacity: 1, rotate: 0 }}
             exit={{
               y: 400,
               rotate: -12,
