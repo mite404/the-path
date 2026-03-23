@@ -1,0 +1,101 @@
+import type { RoadStep } from '@/types'
+
+export interface H1BStep extends RoadStep {
+  exampleQuestion: string
+  phase: string
+}
+
+export const H1B_STEPS: H1BStep[] = [
+  {
+    id: 1,
+    icon: 'briefcase',
+    label: 'Job Offer',
+    duration: 'Before March',
+    phase: 'Preparation',
+    blurb: 'Your employer confirms the role qualifies and signs off on sponsorship.',
+    description: "The employer verifies the role meets USCIS's 'specialty occupation' standard — it must genuinely require a bachelor's degree in a specific field. Common qualifying roles include software engineers, researchers, and financial analysts. This is also when salary is set at or above the prevailing wage for your role and location.",
+    requirement: 'Signed offer letter + verified degree copies',
+    tip: "Generic job titles without a clear degree requirement get scrutinized — specificity in your job description matters.",
+    exampleQuestion: 'How do I know if my role meets the specialty occupation standard?',
+  },
+  {
+    id: 2,
+    icon: 'calendar',
+    label: 'Enter Lottery',
+    duration: 'March 7–24',
+    phase: 'Registration',
+    blurb: 'Your employer submits your registration during the 2-week window. Then you wait.',
+    description: "The H-1B Electronic Registration is not the full petition — just your name, role, and a $215 fee per candidate. The window is open for a minimum of 14 calendar days each March. 65,000 regular visas are available, plus 20,000 more for U.S. master's degree holders. In FY2026, odds were roughly 1 in 3.",
+    requirement: "Active myUSCIS employer account (Ellis sets this up)",
+    tip: "If more than one employer is willing to sponsor you, each can register you — giving you multiple lottery entries.",
+    exampleQuestion: 'Can multiple employers register me for more lottery entries?',
+  },
+  {
+    id: 3,
+    icon: 'star',
+    label: 'Selected!',
+    duration: 'Late March / Early April',
+    phase: 'Selection',
+    blurb: "USCIS notifies your employer. You're in the pool — now the real work begins.",
+    description: 'Selection is notified through the myUSCIS portal, typically by late March or early April. If not selected, the process ends for this fiscal year and restarts next March. USCIS occasionally runs a second lottery draw if the cap isn\'t filled in the first round.',
+    requirement: 'No action needed — Ellis monitors your account',
+    tip: "Not selected this year doesn't mean never. Many H-1B holders were selected on their second or third attempt.",
+    exampleQuestion: 'Is there ever a second lottery draw?',
+  },
+  {
+    id: 4,
+    icon: 'document',
+    label: 'Petition Filed',
+    duration: '~2–3 weeks',
+    phase: 'Filing',
+    blurb: 'Ellis files the Labor Condition Application, then assembles and submits your full petition to USCIS.',
+    description: 'First, a Labor Condition Application is filed with the Department of Labor (7 business days). It certifies you\'ll be paid the prevailing wage and that your employment won\'t harm other workers. Once certified, Ellis drafts the legal brief, completes Form I-129, and compiles all supporting exhibits. Note: a $100,000 Restriction on Entry fee (introduced September 2025) applies to overseas candidates and is now the dominant cost of H-1B sponsorship.',
+    requirement: 'All documents from Step 1 collected and verified',
+    tip: 'Details must match exactly across every document — USCIS petition, LCA, offer letter, transcripts. Mismatches are the leading cause of Requests for Evidence.',
+    exampleQuestion: 'Why do document mismatches cause Requests for Evidence?',
+  },
+  {
+    id: 5,
+    icon: 'stamp',
+    label: 'USCIS Decision',
+    duration: '15 days or 3–4 months',
+    phase: 'Adjudication',
+    blurb: 'USCIS reviews your petition and issues a decision. Premium processing gets you an answer in 15 business days.',
+    description: "Standard processing takes 3–4 months. Premium processing ($2,805) guarantees a response within 15 business days — not necessarily approval, but a decision or a Request for Evidence. An RFE means USCIS wants more documentation; Ellis responds on your behalf. An I-797 approval notice is the green light to continue.",
+    requirement: 'I-797 approval notice issued by USCIS',
+    tip: "RFEs are increasingly common. Ellis's $3,000 flat fee covers all USCIS responses including RFEs and NOIDs — no surprise legal bills.",
+    exampleQuestion: 'What happens if I get a Request for Evidence?',
+  },
+  {
+    id: 6,
+    icon: 'people',
+    label: 'Visa Interview',
+    duration: '2–8 weeks',
+    phase: 'Consular Processing',
+    blurb: 'You attend a visa interview at your local U.S. embassy and receive your visa stamp.',
+    description: "File Form DS-160 online, pay the $205 visa fee, and schedule an interview at your nearest U.S. embassy or consulate. Bring your passport, DS-160 confirmation, I-797 approval notice, and 2 passport photos. Interview wait times vary dramatically by country — some embassies book weeks out. Ellis offers interview practice with a former consulate officer. If you're already in the U.S. on valid status, you skip this step entirely.",
+    requirement: 'Valid passport (6+ months beyond intended entry date)',
+    tip: "Book your consulate appointment as soon as your I-797 arrives — popular locations fill fast and you need to enter before October 1st.",
+    exampleQuestion: "Do I skip the interview if I'm already in the U.S.?",
+  },
+  {
+    id: 7,
+    icon: 'plane',
+    label: 'October 1st',
+    duration: 'October 1st',
+    phase: 'Arrival',
+    blurb: 'You land, your I-94 is stamped, and your 3-year H-1B clock starts. Welcome.',
+    description: 'H-1B status is tied to the federal fiscal year — work cannot legally begin before October 1st regardless of when your petition was approved. Your initial status is granted in 3-year terms, with extensions possible for another 3 years, up to a 6-year maximum. Extensions beyond 6 years are only possible with a pending green card application. H-1B is dual-intent: you can pursue a green card without jeopardizing your status.',
+    requirement: 'Valid visa stamp + I-797 approval notice in hand',
+    tip: 'Check your I-94 record at cbp.dhs.gov/I94 immediately after arrival. The I-94 — not your visa stamp — governs your authorized stay period and end date.',
+    exampleQuestion: 'What does dual-intent mean for getting a green card?',
+  },
+]
+
+export const H1B_ROAD_DATA = {
+  visaType: 'H-1B',
+  tagline: 'Your path from job offer to first day of work.',
+  totalTime: '12–18 months',
+  difficulty: 'Complex' as const,
+  steps: H1B_STEPS as RoadStep[],
+}
